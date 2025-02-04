@@ -1,13 +1,16 @@
 use std::{
-    cell::{Ref, RefCell, RefMut}, collections::HashMap, error::Error, rc::{Rc, Weak}
+    cell::{Ref, RefCell, RefMut},
+    collections::HashMap,
+    error::Error,
+    rc::{Rc, Weak},
 };
 
 use crate::linked_list::{
     error::{ParseNodeError, TryAsMut, TryAsRef},
-    node::NodePtr
+    node::NodePtr,
 };
 
-use super::error::{ParseWeakError, TryUpgrade, TryDowngrade};
+use super::error::{ParseWeakError, TryDowngrade, TryUpgrade};
 
 pub type WeakPtr<T> = Option<Weak<RefCell<T>>>;
 
@@ -16,7 +19,7 @@ pub enum Word {
     #[default]
     No,
     Root,
-    Yes(String)
+    Yes(String),
 }
 
 #[derive(Default)]
@@ -25,7 +28,7 @@ pub struct DictNode {
     pub output: Word,
     pub parent: WeakPtr<DictNode>,
     pub suffix: WeakPtr<DictNode>,
-    pub children: HashMap<char, NodePtr<DictNode>>
+    pub children: HashMap<char, NodePtr<DictNode>>,
 }
 
 impl DictNode {
@@ -35,7 +38,7 @@ impl DictNode {
             output: Word::No,
             parent: None,
             suffix: None,
-            children: HashMap::new()
+            children: HashMap::new(),
         }
     }
     pub fn new_ptr(state: char) -> NodePtr<Self> {
@@ -49,7 +52,13 @@ impl DictNode {
     pub fn is_root(&self) -> bool {
         match self.output {
             Word::Root => true,
-            _ => false
+            _ => false,
+        }
+    }
+    pub fn is_word(&self) -> bool {
+        match self.output {
+            Word::Yes(_) => true,
+            _ => false,
         }
     }
     pub fn has_child(&self, state: char) -> bool {
@@ -58,12 +67,13 @@ impl DictNode {
     pub fn add_child(&mut self, state: char, parent: &NodePtr<DictNode>) {
         let mut child = DictNode::new(state);
         child.parent = Some(parent.try_downgrade().unwrap());
-        self.children.insert(state, Some(Rc::new(RefCell::new(child))));
+        self.children
+            .insert(state, Some(Rc::new(RefCell::new(child))));
     }
     pub fn get_child(&self, state: char) -> NodePtr<Self> {
         match self.children.get(&state) {
             Some(child) => child.clone(),
-            None => None
+            None => None,
         }
     }
     pub fn get_children(&self) -> impl Iterator<Item = &NodePtr<DictNode>> {
@@ -79,7 +89,7 @@ impl TryAsRef<DictNode> for NodePtr<DictNode> {
     fn try_as_ref(&self) -> Result<Ref<'_, DictNode>, Self::Error> {
         match self {
             Some(node_ptr) => Ok(node_ptr.borrow()),
-            None => Err(ParseNodeError)
+            None => Err(ParseNodeError),
         }
     }
 }
@@ -89,7 +99,7 @@ impl TryAsMut<DictNode> for NodePtr<DictNode> {
     fn try_as_mut(&self) -> Result<RefMut<'_, DictNode>, Self::Error> {
         match self {
             Some(node_ptr) => Ok(node_ptr.borrow_mut()),
-            None => Err(ParseNodeError)
+            None => Err(ParseNodeError),
         }
     }
 }
@@ -98,13 +108,11 @@ impl TryUpgrade<DictNode> for WeakPtr<DictNode> {
     type Error = ParseWeakError;
     fn try_upgrade(&self) -> Result<Rc<RefCell<DictNode>>, Self::Error> {
         match self {
-            Some(weak_ptr) => {
-                match weak_ptr.upgrade() {
-                    Some(strong_ptr) => Ok(strong_ptr),
-                    None => Err(ParseWeakError)
-                }
+            Some(weak_ptr) => match weak_ptr.upgrade() {
+                Some(strong_ptr) => Ok(strong_ptr),
+                None => Err(ParseWeakError),
             },
-            None => Err(ParseWeakError)
+            None => Err(ParseWeakError),
         }
     }
 }
@@ -114,9 +122,9 @@ impl TryDowngrade<DictNode> for NodePtr<DictNode> {
     fn try_downgrade(&self) -> Result<Weak<RefCell<DictNode>>, Self::Error> {
         match self {
             Some(node_ptr) => Ok(Rc::downgrade(&node_ptr)),
-            None => Err(ParseNodeError)
+            None => Err(ParseNodeError),
         }
-    }   
+    }
 }
 
 pub trait TryLink {
@@ -129,24 +137,20 @@ impl TryLink for NodePtr<DictNode> {
     type Error = Box<dyn Error>;
     fn try_parent(&self) -> Result<NodePtr<DictNode>, Self::Error> {
         match self.try_as_ref() {
-            Ok(node_ptr) => {
-                match &node_ptr.parent {
-                    Some(parent) => Ok(parent.upgrade()),
-                    None => Err(Box::new(ParseWeakError))
-                }
+            Ok(node_ptr) => match &node_ptr.parent {
+                Some(parent) => Ok(parent.upgrade()),
+                None => Err(Box::new(ParseWeakError)),
             },
-            Err(_) => Err(Box::new(ParseNodeError))
+            Err(_) => Err(Box::new(ParseNodeError)),
         }
     }
     fn try_suffix(&self) -> Result<NodePtr<DictNode>, Self::Error> {
         match self.try_as_ref() {
-            Ok(node_ptr) => {
-                match &node_ptr.suffix {
-                    Some(suffix) => Ok(suffix.upgrade()),
-                    None => Err(Box::new(ParseWeakError))
-                }
+            Ok(node_ptr) => match &node_ptr.suffix {
+                Some(suffix) => Ok(suffix.upgrade()),
+                None => Err(Box::new(ParseWeakError)),
             },
-            Err(_) => Err(Box::new(ParseNodeError))
+            Err(_) => Err(Box::new(ParseNodeError)),
         }
     }
 }
