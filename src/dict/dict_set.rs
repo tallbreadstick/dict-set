@@ -73,10 +73,10 @@ impl DictSet {
         }
         if let Word::Yes(_) = ptr.try_as_ref()?.output {
             while let Some(pop_ptr) = stack.pop() {
-                
+
             }
         }
-        todo!()
+        todo!("implement remove")
     }
     pub fn link_suffixes(&mut self) -> Result<(), Box<dyn Error>> {
         let mut queue: Box<dyn Queue<NodePtr<DictNode>>> = Box::new(LinkedList::<NodePtr<DictNode>>::new());
@@ -115,7 +115,7 @@ impl DictSet {
             let mut check = ptr.clone();
             while !check.try_as_ref()?.is_root() {
                 if let Word::Yes(word) = &check.try_as_ref()?.output {
-                    on_match(i, &word);
+                    on_match(i - word.len() + 1, &word);
                 }
                 check = check.try_suffix()?;
             }

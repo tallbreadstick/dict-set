@@ -11,8 +11,8 @@ fn main() {
 
     let pattern = "The soldiers could barely hold off the orcs until they saw the cavalry charging in from the horizon. The endgame was near.";
     dict_set.search(&pattern, |index, word| {
-        println!("Found word {:?} at &pattern[{}..{}]", word, index - word.len(), index + 1);
-        println!("Word in slice -> {:?}", &pattern[(index - word.len())..(index + 1)]);
+        println!("Found word {:?} at &pattern[{}..{}]", word, index, index + word.len());
+        println!("Word in slice -> {:?}", &pattern[index..(index + word.len())]);
     }).expect("Failed to search string through dictionary");
 
 }

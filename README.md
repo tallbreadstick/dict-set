@@ -1,0 +1,3 @@
+# **dict-set**
+
+This is a little coding exercise I did to experiment with some of Rust's key features like conversion traits and fat pointers. Included in this project are implementations for a singly linked list using `Option<Rc<RefCell<Node<T>>>>` pointers, with trait implementations for `Stack<T>` and `Queue<T>`. The project also features a dictionary set (prefix tree data structure) which utilizes the fat option-rc pointer for owning children, with the addition of `Weak<>` pointers for linking parents and suffixes.
